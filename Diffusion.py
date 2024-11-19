@@ -147,9 +147,8 @@ def train_epoch(model, train_loader, criterion, optimizer):
     train_error, train_total, train_total_loss = 0, 0, 0
     for data, targets in train_loader:
         data, targets = data.to(device), targets.to(device)
-        targets = torch.abs(targets - data).to(device)
+        # targets = torch.abs(targets - data).to(device)
         optimizer.zero_grad()
-        # Add noise to input image
         noise_image = add_noise(data, noise_level).to(device)
         outputs = model(data, noise_image)
         loss = criterion(outputs, targets)
@@ -200,70 +199,40 @@ if __name__ == "__main__":
     train_dataset = TrainDataset(image_folder, label_folder)
     train_loader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
 
-    # # Load images and convert to tensors
-    # input_image = transform(Image.open(input_image_path).convert("RGB")).unsqueeze(0).to(device)
-    # target_image = transform(Image.open(target_image_path).convert("RGB")).unsqueeze(0).to(device)
-    #
-    # # Compute residual image
-    # residual_image = torch.abs(target_image - input_image).to(device)
-    # target_image = residual_image
-
-    # # Move images to CPU and permute dimensions for display
-    # input_image_vis = input_image.squeeze(0).permute(1, 2, 0).cpu()
-    # target_image_vis = target_image.squeeze(0).permute(1, 2, 0).cpu()
-    # residual_image_vis = residual_image.squeeze(0).permute(1, 2, 0).cpu()
-
-    # # Display the input image
-    # plt.imshow(input_image_vis)
-    # plt.axis('off')  # Hide axes
-    # plt.title("Input Image")
-    # plt.show()
-    #
-    # # Display the target image
-    # plt.imshow(target_image_vis)
-    # plt.axis('off')  # Hide axes
-    # plt.title("Target Image")
-    # plt.show()
-    #
-    # # Display the residual image
-    # plt.imshow(residual_image_vis)
-    # plt.axis('off')  # Hide axes
-    # plt.title("Residual Image")
-    # plt.show()
-
     # Model, optimizer, and loss
     model = UNet().to(device)  # Move model to GPU
     optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
     weight_zero = 0.1  # Weight for samples with label [0, y] in the first row
     weight_non_zero = 50  # Weight for samples with non-zero label in the first row
-    # criterion = nn.MSELoss()
-    criterion = WeightedMSELoss(weight_zero, weight_non_zero)
+    criterion = nn.MSELoss()
+    # criterion = WeightedMSELoss(weight_zero, weight_non_zero)
 
     # Training loop
-    epochs = 1500
+    epochs = 2000
+    show_epoch = [500, 1000, 1999]
     noise_level = torch.tensor([0.1], device=device)  # Ensure noise level tensor is on the correct device
 
     for epoch in range(epochs):
         print("epoch:", epoch)
         input_image, test_output, target_image = train_epoch(model, train_loader, criterion, optimizer)
         # test_epoch_accuracy, test_ave_loss = evaluate(model, train_loader, criterion)
+        if epoch in show_epoch:
+            # Convert the output tensor to a PIL image for visualization
+            to_pil = transforms.ToPILImage()
+            output_image = to_pil(test_output.squeeze(0).cpu())  # Move to CPU for display
 
-    # Convert the output tensor to a PIL image for visualization
-    to_pil = transforms.ToPILImage()
-    output_image = to_pil(test_output.squeeze(0).cpu())  # Move to CPU for display
+            # Display the result
+            plt.figure(figsize=(8, 8))
+            plt.subplot(1, 3, 1)
+            plt.title("Input Image")
+            plt.imshow(input_image.squeeze(0).permute(1, 2, 0).cpu())
 
-    # Display the result
-    plt.figure(figsize=(8, 8))
-    plt.subplot(1, 3, 1)
-    plt.title("Input Image")
-    plt.imshow(input_image.squeeze(0).permute(1, 2, 0).cpu())
+            plt.subplot(1, 3, 2)
+            plt.title("Target Image")
+            plt.imshow(target_image.squeeze(0).permute(1, 2, 0).cpu())
 
-    plt.subplot(1, 3, 2)
-    plt.title("Target Image")
-    plt.imshow(target_image.squeeze(0).permute(1, 2, 0).cpu())
-
-    plt.subplot(1, 3, 3)
-    plt.title("Model Output")
-    plt.imshow(output_image)
-    plt.show()
+            plt.subplot(1, 3, 3)
+            plt.title("Model Output")
+            plt.imshow(output_image)
+            plt.show()
