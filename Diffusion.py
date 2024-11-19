@@ -6,6 +6,30 @@ from torchvision.transforms import Compose, Resize, ToTensor
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+import os
+
+
+class TrainDataset(Dataset):
+    def __init__(self, image_folder, label_folder):
+        self.image_folder = image_folder
+        self.label_folder = label_folder
+        self.transform = Compose([Resize((256, 256)), ToTensor()])
+        self.image_files = os.listdir(image_folder)
+        self.label_files = os.listdir(label_folder)
+
+    def __len__(self):
+        return len(self.image_files)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.image_folder, self.image_files[idx])
+        img_name2 = os.path.join(self.label_folder, self.label_files[idx])
+        image = Image.open(img_name)
+        image2 = Image.open(img_name2)
+        image = self.transform(image)
+        image2 = self.transform(image2)
+
+        return image.to(device), image2.to(device)
 
 
 class UNet(nn.Module):
@@ -118,26 +142,71 @@ class WeightedMSELoss(nn.Module):
         return weighted_loss
 
 
+def train_epoch(model, train_loader, criterion, optimizer):
+    model.train()
+    train_error, train_total, train_total_loss = 0, 0, 0
+    for data, targets in train_loader:
+        data, targets = data.to(device), targets.to(device)
+        targets = torch.abs(targets - data).to(device)
+        optimizer.zero_grad()
+        # Add noise to input image
+        noise_image = add_noise(data, noise_level).to(device)
+        outputs = model(data, noise_image)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+    print("loss:", loss)
+
+    return data, outputs, targets
+
+
+def evaluate(model, test_loader, criterion):
+    model.eval()
+    test_error, test_total_loss, test_total = 0, 0, 0
+    with torch.no_grad():
+        for data, targets in test_loader:
+            data, targets = data.to(device), targets.to(device)
+            outputs = model(data)
+            loss = criterion(outputs, targets)
+
+            test_total += 1
+            try:
+                new_error = outputs - targets
+                test_error = test_error + torch.abs(new_error)
+            except:
+                test_error = test_error
+            test_total_loss += loss
+
+        # Update total
+        test_epoch_accuracy = test_error / test_total
+        test_ave_loss = test_total_loss / test_total
+
+    return test_epoch_accuracy, test_ave_loss
+
+
 if __name__ == "__main__":
     # Check if CUDA is available, otherwise use CPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Load images and convert to tensors
-    input_image_path = "input.PNG"  # Replace with your actual path
-    target_image_path = "output.PNG"  # Replace with your actual path
+    image_folder = "train"  # Replace with your actual path
+    label_folder = "label"  # Replace with your actual path
 
     transform = Compose([
         Resize((256, 256)),  # Resize images to a standard size
         ToTensor()])
 
-    # Load images and convert to tensors
-    input_image = transform(Image.open(input_image_path).convert("RGB")).unsqueeze(0).to(device)
-    target_image = transform(Image.open(target_image_path).convert("RGB")).unsqueeze(0).to(device)
+    train_dataset = TrainDataset(image_folder, label_folder)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
 
-    # Compute residual image
-    residual_image = torch.abs(target_image - input_image).to(device)
-    target_image = residual_image
+    # # Load images and convert to tensors
+    # input_image = transform(Image.open(input_image_path).convert("RGB")).unsqueeze(0).to(device)
+    # target_image = transform(Image.open(target_image_path).convert("RGB")).unsqueeze(0).to(device)
+    #
+    # # Compute residual image
+    # residual_image = torch.abs(target_image - input_image).to(device)
+    # target_image = residual_image
 
     # # Move images to CPU and permute dimensions for display
     # input_image_vis = input_image.squeeze(0).permute(1, 2, 0).cpu()
@@ -172,28 +241,13 @@ if __name__ == "__main__":
     criterion = WeightedMSELoss(weight_zero, weight_non_zero)
 
     # Training loop
-    epochs = 2000
+    epochs = 1500
     noise_level = torch.tensor([0.1], device=device)  # Ensure noise level tensor is on the correct device
 
     for epoch in range(epochs):
-        optimizer.zero_grad()
-
-        # Add noise to input image
-        noisy_image = add_noise(input_image, noise_level).to(device)
-
-        # Model prediction
-        output = model(noisy_image, input_image)
-
-        # Calculate loss
-        loss = criterion(output, target_image)
-        loss.backward()
-        optimizer.step()
-
-        print(f"Epoch {epoch + 1}, Loss: {loss.item()}")
-
-    # Testing: Check if the model has overfit to the input
-    with torch.no_grad():
-        test_output = model(input_image, input_image)
+        print("epoch:", epoch)
+        input_image, test_output, target_image = train_epoch(model, train_loader, criterion, optimizer)
+        # test_epoch_accuracy, test_ave_loss = evaluate(model, train_loader, criterion)
 
     # Convert the output tensor to a PIL image for visualization
     to_pil = transforms.ToPILImage()
