@@ -206,8 +206,8 @@ model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 1000
-show_epoch = [int(epochs/3) - 1, int(epochs/3*2) - 1, epochs - 1]
+epochs = 4000
+show_epoch = [int(epochs/4) - 1, int(epochs/2) - 1, int(epochs/4*3) - 1, epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 
