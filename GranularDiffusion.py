@@ -30,7 +30,6 @@ class TrainDataset(Dataset):
         label = self.transform(label)
         return image, label
 
-
 def show_tensor_image(image):
     reverse_transforms = transforms.Compose([
         transforms.Lambda(lambda t: (t + 1) / 2),
@@ -39,12 +38,9 @@ def show_tensor_image(image):
         transforms.Lambda(lambda t: t.numpy().astype(np.uint8)),
         transforms.ToPILImage(),
     ])
-
-    # Take first image of batch
     if len(image.shape) == 4:
         image = image[0, :, :, :]
     plt.imshow(reverse_transforms(image))
-
 
 class SinusoidalPositionEmbeddings(nn.Module):
     def __init__(self, dim):
@@ -58,9 +54,7 @@ class SinusoidalPositionEmbeddings(nn.Module):
         embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
         embeddings = time[:, None] * embeddings[None, :]
         embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
-        # TODO: Double check the ordering here
         return embeddings
-
 
 class Block(nn.Module):
     def __init__(self, in_ch, out_ch, time_emb_dim, up=False):
@@ -77,26 +71,15 @@ class Block(nn.Module):
         self.bnorm2 = nn.BatchNorm2d(out_ch)
         self.relu = nn.ReLU()
 
-    def forward(self, x, t, ):
-        # First Conv
+    def forward(self, x, t):
         h = self.bnorm1(self.relu(self.conv1(x)))
-        # Time embedding
         time_emb = self.relu(self.time_mlp(t))
-        # Extend last 2 dimensions
         time_emb = time_emb[(...,) + (None,) * 2]
-        # Add time channel
         h = h + time_emb
-        # Second Conv
         h = self.bnorm2(self.relu(self.conv2(h)))
-        # Down or Upsample
         return self.transform(h)
 
-
 class UNet(nn.Module):
-    """
-    A simplified variant of the Unet architecture.
-    """
-
     def __init__(self):
         super().__init__()
         image_channels = 3 * 2
@@ -105,106 +88,68 @@ class UNet(nn.Module):
         out_dim = 3
         time_emb_dim = 32
 
-        # Time embedding
         self.time_mlp = nn.Sequential(
             SinusoidalPositionEmbeddings(time_emb_dim),
             nn.Linear(time_emb_dim, time_emb_dim),
             nn.ReLU()
         )
 
-        # Initial projection
         self.conv0 = nn.Conv2d(image_channels, down_channels[0], 3, padding=1)
 
-        # Downsample
         self.downs = nn.ModuleList([Block(down_channels[i], down_channels[i + 1], time_emb_dim) for i in range(len(down_channels) - 1)])
-        # Upsample
         self.ups = nn.ModuleList([Block(up_channels[i], up_channels[i + 1], time_emb_dim, up=True) for i in range(len(up_channels) - 1)])
-
-        # Edit: Corrected a bug found by Jakub C (see YouTube comment)
         self.output = nn.Conv2d(up_channels[-1], out_dim, 1)
 
     def forward(self, x, timestep, condition):
-        # Embedd time
         t = self.time_mlp(timestep)
-        # Initial conv
         x = torch.cat((x, condition), dim=1)
         x = self.conv0(x)
-        # Unet
         residual_inputs = []
         for down in self.downs:
             x = down(x, t)
             residual_inputs.append(x)
         for up in self.ups:
             residual_x = residual_inputs.pop()
-            # Add residual x as additional channels
             x = torch.cat((x, residual_x), dim=1)
             x = up(x, t)
         return self.output(x)
 
-
-def get_loss(model, x_0, t, condition):
-    x_noisy, noise = forward_diffusion_sample(x_0, t, device)
+def get_loss(model, condition, t, label):
+    x_noisy, noise = forward_diffusion_sample(label, t, device)
     noise_pred = model(x_noisy, t, condition)
     return F.l1_loss(noise, noise_pred)
-
 
 def linear_beta_schedule(timesteps, start=0.0001, end=0.02):
     return torch.linspace(start, end, timesteps)
 
 def get_index_from_list(vals, t, x_shape):
-    """
-    Returns a specific index t of a passed list of values vals
-    while considering the batch dimension.
-    """
     batch_size = t.shape[0]
     out = vals.gather(-1, t.cpu())
     return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
 
 def forward_diffusion_sample(x_0, t, device="cpu"):
-    """
-    Takes an image and a timestep as input and
-    returns the noisy version of it
-    """
     noise = torch.randn_like(x_0)
     sqrt_alphas_cumprod_t = get_index_from_list(sqrt_alphas_cumprod, t, x_0.shape)
-    sqrt_one_minus_alphas_cumprod_t = get_index_from_list(
-        sqrt_one_minus_alphas_cumprod, t, x_0.shape
-    )
-    # mean + variance
+    sqrt_one_minus_alphas_cumprod_t = get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x_0.shape)
     return sqrt_alphas_cumprod_t.to(device) * x_0.to(device) + sqrt_one_minus_alphas_cumprod_t.to(device) * noise.to(device), noise.to(device)
-
 
 @torch.no_grad()
 def sample_timestep(x, t, condition):
-    """
-    Calls the model to predict the noise in the image and returns
-    the denoised image.
-    Applies noise to this image, if we are not in the last step yet.
-    """
     betas_t = get_index_from_list(betas, t, x.shape)
-    sqrt_one_minus_alphas_cumprod_t = get_index_from_list(
-        sqrt_one_minus_alphas_cumprod, t, x.shape
-    )
+    sqrt_one_minus_alphas_cumprod_t = get_index_from_list(sqrt_one_minus_alphas_cumprod, t, x.shape)
     sqrt_recip_alphas_t = get_index_from_list(sqrt_recip_alphas, t, x.shape)
-
-    # Call model (current image - noise prediction)
     model_mean = sqrt_recip_alphas_t * (
-            x - betas_t * model(x, t, condition) / sqrt_one_minus_alphas_cumprod_t
+        x - betas_t * model(x, t, condition) / sqrt_one_minus_alphas_cumprod_t
     )
     posterior_variance_t = get_index_from_list(posterior_variance, t, x.shape)
-
     if t == 0:
-        # As pointed out by Luis Pereira (see YouTube comment)
-        # The t's are offset from the t's in the paper
         return model_mean
     else:
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
-
 @torch.no_grad()
-def sample_plot_image():
-    # Sample noise
+def sample_plot_image(epoch, condition, label, num):
     img_size = IMG_SIZE
     img = torch.randn((1, 3, img_size, img_size), device=device)
     plt.figure(figsize=(15, 15))
@@ -212,23 +157,31 @@ def sample_plot_image():
     num_images = 5
     stepsize = int(T / num_images)
 
+    epoch_dir = os.path.join(output_dir, f"epoch_{epoch}")
+    os.makedirs(epoch_dir, exist_ok=True)
+
     for i in range(0, T)[::-1]:
         t = torch.full((1,), i, device=device, dtype=torch.long)
         img = sample_timestep(img, t, condition.to(device))
-        # Edit: This is to maintain the natural range of the distribution
         img = torch.clamp(img, -1.0, 1.0)
         if i % stepsize == 0:
-            plt.subplot(1, num_images + 1, int(i / stepsize) + 1)
+            plt.subplot(1, num_images + 2, int((T - i) / stepsize))
             show_tensor_image(img.detach().cpu())
-        plt.subplot(1, num_images + 1, num_images + 1)
-        show_tensor_image(condition.detach().cpu())
-    plt.show()
+            if i != 0:
+                plt.title("Denoising")  # Add title for the condition image
+            else:
+                plt.title("Model output")  # Add title for the condition image
+    plt.subplot(1, num_images + 2, num_images + 1)
+    show_tensor_image(condition.detach().cpu())
+    plt.title("Condition Image")  # Add title for the condition image
+    plt.subplot(1, num_images + 2, num_images + 2)
+    show_tensor_image(label.detach().cpu())
+    plt.title("Label Image")  # Add title for the batch image
+    plt.savefig(os.path.join(epoch_dir, f"sample_plot_epoch_{epoch}_{num}.png"))
+    plt.close()
 
-
-# Define beta schedule
 T = 300
 betas = linear_beta_schedule(timesteps=T)
-# Pre-calculate different terms for closed form
 alphas = 1. - betas
 alphas_cumprod = torch.cumprod(alphas, axis=0)
 alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
@@ -237,51 +190,62 @@ sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
 sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
 posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
-
 IMG_SIZE = 64
 BATCH_SIZE = 1
 data_transforms = transforms.Compose([
-        transforms.Resize((IMG_SIZE, IMG_SIZE)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(), # Scales data into [0,1]
-        transforms.Lambda(lambda t: (t * 2) - 1) # Scale between [-1, 1]
-    ])
+    transforms.Resize((IMG_SIZE, IMG_SIZE)),
+    # transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Lambda(lambda t: (t * 2) - 1)
+])
 
-data = TrainDataset('trains', 'labels', data_transforms)
+data = TrainDataset('train', 'label', data_transforms)
 dataloader = DataLoader(dataset=data, batch_size=BATCH_SIZE, shuffle=True)
 
-# Simulate forward diffusion
-image = next(iter(dataloader))[0]
-plt.figure(figsize=(15,15))
-plt.axis('off')
-num_images = 10
-stepsize = int(T/num_images)
-
-for idx in range(0, T, stepsize):
-    t = torch.Tensor([idx]).type(torch.int64)
-    plt.subplot(1, num_images+1, int(idx/stepsize) + 1)
-    img, noise = forward_diffusion_sample(image, t)
-    show_tensor_image(img)
-plt.show()
-
 model = UNet()
-print("Num params: ", sum(p.numel() for p in model.parameters()))
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
-print(device)
 model.to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-epochs = 1000 # Try more!
-show_epoch = [int(epochs/2) - 1, epochs - 1]
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+epochs = 1000
+show_epoch = [int(epochs/3) - 1, int(epochs/3*2) - 1, epochs - 1]
+output_dir = "output"
+os.makedirs(output_dir, exist_ok=True)
 
+losses = []
 for epoch in range(epochs):
-    for batch, condition in dataloader:
+    epoch_loss = 0  # To accumulate batch losses for this epoch
+    num_batches = 0  # To count the number of batches
+    select_output_num = 0
+    for condition, label in dataloader:
         optimizer.zero_grad()
         t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-        loss = get_loss(model, batch, t, condition.to(device))
+        loss = get_loss(model, condition.to(device), t, label.to(device))
         loss.backward()
         optimizer.step()
-        if epoch % 100 == 0:
-            print(f"Epoch {epoch} | Loss: {loss.item()} ")
-        if epoch in show_epoch:
-            sample_plot_image()
+        losses.append(loss.item())
+        if epoch in show_epoch and select_output_num % 5 == 0:
+            sample_plot_image(epoch, condition.to(device), label.to(device), int(select_output_num / 5))
+        # Accumulate the loss
+        epoch_loss += loss.item()
+        num_batches += 1
+        select_output_num += 1
+    # Calculate and store the average loss for the epoch
+    average_loss = epoch_loss / num_batches
+    losses.append(average_loss)
+    if epoch % 10 == 0:
+        print(f"Epoch {epoch} | Loss: {loss.item()}")
+
+# model_save_path = os.path.join(output_dir, "trained_model.pth")
+# torch.save(model.state_dict(), model_save_path)
+# print(f"Model saved at {model_save_path}")
+
+plt.figure(figsize=(10, 5))
+plt.plot(range(len(losses)), losses, label="Training Loss")
+plt.xlabel("Iterations")
+plt.ylabel("Loss")
+plt.title("Training Loss vs Epoch")
+plt.legend()
+loss_plot_path = os.path.join(output_dir, "loss_vs_epoch.png")
+plt.savefig(loss_plot_path)
+plt.close()
+print(f"Loss plot saved at {loss_plot_path}")
