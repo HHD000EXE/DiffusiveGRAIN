@@ -222,7 +222,6 @@ for epoch in range(epochs):
         loss = get_loss(model, condition.to(device), t, label.to(device))
         loss.backward()
         optimizer.step()
-        losses.append(loss.item())
         if epoch in show_epoch and select_output_num % 5 == 0:
             sample_plot_image(epoch, condition.to(device), label.to(device), int(select_output_num / 5))
         # Accumulate the loss
