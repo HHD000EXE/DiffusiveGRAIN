@@ -199,7 +199,7 @@ data_transforms = transforms.Compose([
     transforms.Lambda(lambda t: (t * 2) - 1)
 ])
 
-data = TrainDataset('train', 'label', data_transforms)
+data = TrainDataset('trains', 'labels', data_transforms)
 dataloader = DataLoader(dataset=data, batch_size=BATCH_SIZE, shuffle=True)
 
 model = UNet()
