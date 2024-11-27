@@ -1,7 +1,8 @@
 import cv2
 import os
-import numpy as np
 import pandas as pd
+from matplotlib import cm
+import numpy as np
 
 frame_time = []  # frame number that indicate relative time from motor starting
 exca_seq_num = []  # sequence number of excavation actions
@@ -26,15 +27,15 @@ df = pd.read_csv(csv_file_path)
 # Get a list of file names in the folder
 file_names = os.listdir(folder_path)
 
-# Create a blank mask that is the same size as the image
-mask = np.ones((400, 400, 3), dtype="uint8")
-# Mask the vibration of motor
-points = np.array([[60, 400], [60, 180], [220, 180], [220, 270], [160, 270], [160, 400]], dtype=np.int32)
-# Reshape the points in a form required by polylines
-points = points.reshape((-1, 1, 2))
-# Draw the polygon on the mask with white color
-cv2.polylines(mask, [points], isClosed=True, color=(0, 0, 0), thickness=2)
-cv2.fillPoly(mask, [points], color=(0, 0, 0))
+# # Create a blank mask that is the same size as the image
+# mask = np.ones((400, 400, 3), dtype="uint8")
+# # Mask the vibration of motor
+# points = np.array([[60, 400], [60, 180], [220, 180], [220, 270], [160, 270], [160, 400]], dtype=np.int32)
+# # Reshape the points in a form required by polylines
+# points = points.reshape((-1, 1, 2))
+# # Draw the polygon on the mask with white color
+# cv2.polylines(mask, [points], isClosed=True, color=(0, 0, 0), thickness=2)
+# cv2.fillPoly(mask, [points], color=(0, 0, 0))
 
 for file_name in file_names:
     # Search for the value in the specified column
@@ -66,21 +67,20 @@ for file_name in file_names:
     while True:
         # Read the next frame
         ret, frame = cap.read()
-        # if file_name[-8:-5] == "dom":
-        #     frame_distance = 75  # subtract images with this distance
-        # else:
-        #     frame_distance = 45 # subtract images with this distance
 
         # Check if the frame was successfully read
         if not ret:
             break
 
-        # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Convert to grayscale if the input frame has 3 channels
+        if len(frame.shape) == 3 and frame.shape[2] == 3:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Ensure frame is grayscale
+
 
         # Define the coordinates for the top-left and bottom-right corners of the ROI
         if depth_mode == 1 or depth_mode == 2:
-            x1, y1 = 130, 110  # Bottom-left corner
-            x2, y2 = 430, 370  # Top-right corner
+            x1, y1 = 400, 100  # Bottom-left corner
+            x2, y2 = 1000, 700  # Top-right corner
         else:
             x1, y1 = 110, 50  # Bottom-left corner
             x2, y2 = 510, 450  # Top-right corner
@@ -91,13 +91,13 @@ for file_name in file_names:
         frame = cv2.resize(frame, (400, 400))  # resize the image
         frame_record.append(frame)
 
-        # Process every 4th frame
+        # Process every frame distance
         if (frame_count-start_frame) % frame_distance == 0 and frame_count >= start_frame:
             if depth_mode == 1:
                 if frame_count == start_frame:
-                    frame_sub = cv2.subtract(frame, frame)
+                    frame_sub = np.zeros_like(frame, dtype=np.float32)
                 else:
-                    frame_sub = cv2.subtract(frame, frame_record[frame_count - frame_distance])
+                    frame_sub = frame.astype(np.float32) - frame_record[frame_count - frame_distance].astype(np.float32)
                     # Apply the mask using bitwise_and
                     # frame_sub = np.multiply(frame_sub, mask)
                 # frame_sub[frame_sub > 127] = 0
@@ -115,32 +115,17 @@ for file_name in file_names:
     cap.release()
 
     # Save the extracted frames to files
-    for i, frame in enumerate(output_frames[:-2]):
+    for i, frame in enumerate(output_frames[:]):
+        normalized_diff = frame / 255
+        # Apply the coolwarm colormap
+        colormap = cm.get_cmap('coolwarm')
+        frame_colormap = (colormap((normalized_diff + 1) / 2)[:, :, :3] * 255).astype(np.uint8)
         if depth_mode == 0:
             cv2.imwrite(f"train_images(RGB)/{file_name[:-4]}_{i}.png", frame)
         if depth_mode == 1:
-            cv2.imwrite(f"train_images(D)/{file_name[:-4]}_{i}.png", frame)
+            cv2.imwrite(f"train_images(D)/{file_name[:-4]}_{i}.png", frame_colormap * 2)
         if depth_mode == 2:
             cv2.imwrite(f"train_images(RawD)/{file_name[:-4]}_{i}.png", frame)
         image_name.append(f"{file_name[:-4]}_{i}.png")
         frame_time.append(i)
         # exca_seq_num.append(np.floor(i/22.5))
-
-
-# # create csv file that contains extraced images information(image_name, frame_num, frame_time, exca_seq_num)
-# data = {
-#     'image_names': image_name,
-#     'frame_time': frame_time,
-#     'sequence_number_excavation_action': exca_seq_num
-# }
-# train_df = pd.DataFrame(data)
-# csv_file_path = 'training data phase 1.csv'
-# train_df.to_csv(csv_file_path, index=False)
-
-# # create the csv that contains all video names
-# data = {
-#     'video_names': file_names,
-# }
-# df = pd.DataFrame(data)
-# csv_file_path = 'Video_names.csv'
-# df.to_csv(csv_file_path, index=False)
