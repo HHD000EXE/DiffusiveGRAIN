@@ -9,7 +9,7 @@ exca_seq_num = []  # sequence number of excavation actions
 image_name = []  # extracted image names
 
 
-depth_mode = 2  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
+depth_mode = 1  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
 
 if depth_mode == 1 or depth_mode == 2:
     # Open the video file
@@ -79,8 +79,8 @@ for file_name in file_names:
 
         # Define the coordinates for the top-left and bottom-right corners of the ROI
         if depth_mode == 1 or depth_mode == 2:
-            x1, y1 = 400, 100  # Bottom-left corner
-            x2, y2 = 1000, 700  # Top-right corner
+            x1, y1 = 400 - 200, 100  # Bottom-left corner
+            x2, y2 = 1000 - 500, 700 - 300  # Top-right corner
         else:
             x1, y1 = 110, 50  # Bottom-left corner
             x2, y2 = 510, 450  # Top-right corner

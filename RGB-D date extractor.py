@@ -32,8 +32,8 @@ for bag_file_path in bag_file_paths:
 
         frame_width = 640
         frame_height = 480
-        depth_frame_width = 1280
-        depth_frame_height = 720
+        depth_frame_width = 640 # 1280
+        depth_frame_height = 480 # 720
         color_video_writer = cv2.VideoWriter(f'{bag_file_path[:-4]}_color.avi',
                                              cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 15,
                                              (frame_width, frame_height))
@@ -65,8 +65,8 @@ for bag_file_path in bag_file_paths:
             color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
 
             # Normalize depth image to 0–255 for grayscale representation
-            depth_min = 590  # Minimum depth in mm
-            depth_max = 670  # Maximum depth in mm
+            depth_min = 590 - 30  # Minimum depth in mm
+            depth_max = 670 - 30  # Maximum depth in mm
             depth_scaled = np.clip(depth_image, depth_min, depth_max)
             depth_scaled = ((depth_scaled - depth_min) / (depth_max - depth_min) * 255).astype(np.uint8)
 
