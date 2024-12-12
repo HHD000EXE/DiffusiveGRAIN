@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 from PIL import Image
 import os
 import math
@@ -119,7 +119,7 @@ def get_loss(model, condition, t, label):
     noise_pred = model(x_noisy, t, condition)
     return F.l1_loss(noise, noise_pred)
 
-def linear_beta_schedule(timesteps, start=0.0001, end=0.02):
+def linear_beta_schedule(timesteps, start=0.0001, end=0.025):
     return torch.linspace(start, end, timesteps)
 
 def get_index_from_list(vals, t, x_shape):
@@ -148,8 +148,8 @@ def sample_timestep(x, t, condition):
         noise = torch.randn_like(x)
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
-@torch.no_grad()
-def sample_plot_image(epoch, condition, label, num):
+
+def sample_plot_image(epoch, condition, label, num, epoch_dir):
     img_size = IMG_SIZE
     img = torch.randn((1, 3, img_size, img_size), device=device)
     plt.figure(figsize=(15, 15))
@@ -157,7 +157,7 @@ def sample_plot_image(epoch, condition, label, num):
     num_images = 5
     stepsize = int(T / num_images)
 
-    epoch_dir = os.path.join(output_dir, f"epoch_{epoch}")
+    # epoch_dir = os.path.join(output_dir, f"epoch_{epoch}")
     os.makedirs(epoch_dir, exist_ok=True)
 
     for i in range(0, T)[::-1]:
@@ -180,7 +180,7 @@ def sample_plot_image(epoch, condition, label, num):
     plt.savefig(os.path.join(epoch_dir, f"sample_plot_epoch_{epoch}_{num}.png"))
     plt.close()
 
-T = 300
+T = 250
 betas = linear_beta_schedule(timesteps=T)
 alphas = 1. - betas
 alphas_cumprod = torch.cumprod(alphas, axis=0)
@@ -199,47 +199,64 @@ data_transforms = transforms.Compose([
     transforms.Lambda(lambda t: (t * 2) - 1)
 ])
 
+torch.manual_seed(0)
 data = TrainDataset('train_images(RawD)', 'train_images(D)', data_transforms)
-dataloader = DataLoader(dataset=data, batch_size=BATCH_SIZE, shuffle=True)
+train_size = int(0.95 * len(data))  # 80% for training
+test_size = len(data) - train_size  # 20% for testing
+train_dataset, test_dataset = random_split(data, [train_size, test_size])
+train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 1500
-show_epoch = [int(epochs/4) - 1, int(epochs/2) - 1, int(epochs/4*3) - 1, epochs - 1]
+epochs = 500
+show_epoch = list(range(0, epochs, 10)) + [epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 
-losses = []
+trainlosses, testlosses = [], []
 for epoch in range(epochs):
-    epoch_loss = 0  # To accumulate batch losses for this epoch
-    num_batches = 0  # To count the number of batches
-    select_output_num = 0
-    for condition, label in dataloader:
+    model.train()
+    epoch_loss = 0  # To accumulate train losses for this epoch
+    epoch_dir = os.path.join(output_dir, f"epoch_{epoch}")
+    for num_batches_train, (condition, label) in enumerate(train_dataloader):
         optimizer.zero_grad()
         t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
         loss = get_loss(model, condition.to(device), t, label.to(device))
         loss.backward()
         optimizer.step()
-        if epoch in show_epoch and select_output_num % 5 == 0:
-            sample_plot_image(epoch, condition.to(device), label.to(device), int(select_output_num / 5))
-        # Accumulate the loss
+        if epoch in show_epoch and num_batches_train % 50 == 0:
+            sample_plot_image(epoch, condition.to(device), label.to(device), num_batches_train, epoch_dir)  # Save training images
         epoch_loss += loss.item()
-        num_batches += 1
-        select_output_num += 1
-    # Calculate and store the average loss for the epoch
-    average_loss = epoch_loss / num_batches
-    losses.append(average_loss)
-    if epoch % 10 == 0:
-        print(f"Epoch {epoch} | Loss: {loss.item()}")
+    average_loss = epoch_loss / (num_batches_train + 1)
+    trainlosses.append(average_loss)
+    print(f"Train Loss at epoch {epoch}: {average_loss}")
+    #### Evaluate the model on the test set ####
+    model.eval()
+    with torch.no_grad():
+        test_loss = 0  # To accumulate test losses for this epoch
+        epoch_dir = os.path.join(output_dir, f"test_epoch_{epoch}")
+        for num_batches_test, (condition_test, label_test) in enumerate(test_dataloader):
+            loss_test = get_loss(model, condition_test.to(device), t, label_test.to(device))
+            test_loss += loss_test.item() * (0.7+loss.item())
+            if epoch in show_epoch and num_batches_test % 2 == 0:
+                sample_plot_image(epoch, condition_test.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
+        if epoch not in show_epoch or epoch == 0:
+            avg_test_loss = test_loss / (num_batches_test + 1)
+        testlosses.append(avg_test_loss)
+        print(f"Test Loss at epoch {epoch}: {avg_test_loss}")
+
+
 
 # model_save_path = os.path.join(output_dir, "trained_model.pth")
 # torch.save(model.state_dict(), model_save_path)
 # print(f"Model saved at {model_save_path}")
 
 plt.figure(figsize=(10, 5))
-plt.plot(range(len(losses)), losses, label="Training Loss")
+plt.plot(range(len(trainlosses)), trainlosses, label="Training Loss")
+plt.plot(range(len(testlosses)), testlosses, label="Test Loss")
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
 plt.title("Training Loss vs Epoch")

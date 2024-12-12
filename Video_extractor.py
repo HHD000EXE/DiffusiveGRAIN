@@ -9,7 +9,7 @@ exca_seq_num = []  # sequence number of excavation actions
 image_name = []  # extracted image names
 
 
-depth_mode = 1  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
+depth_mode = 2  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
 
 if depth_mode == 1 or depth_mode == 2:
     # Open the video file
@@ -43,6 +43,7 @@ for file_name in file_names:
     try:
         start_frame = matching_row['starting_frame'].iloc[0]
         frame_distance = matching_row['frame_distance'].iloc[0]
+        end_frame = matching_row['end_frame'].iloc[0]
     except:
         print(file_name)
         print("File name doesn't matched")
@@ -79,8 +80,8 @@ for file_name in file_names:
 
         # Define the coordinates for the top-left and bottom-right corners of the ROI
         if depth_mode == 1 or depth_mode == 2:
-            x1, y1 = 400 - 200, 100  # Bottom-left corner
-            x2, y2 = 1000 - 500, 700 - 300  # Top-right corner
+            x1, y1 = 200, 100  # Bottom-left corner
+            x2, y2 = 500, 400  # Top-right corner
         else:
             x1, y1 = 110, 50  # Bottom-left corner
             x2, y2 = 510, 450  # Top-right corner
@@ -93,23 +94,20 @@ for file_name in file_names:
 
         # Process every frame distance
         if (frame_count-start_frame) % frame_distance == 0 and frame_count >= start_frame:
-            if depth_mode == 1:
-                if frame_count == start_frame:
-                    frame_sub = np.zeros_like(frame, dtype=np.float32)
-                else:
-                    frame_sub = frame.astype(np.float32) - frame_record[frame_count - frame_distance].astype(np.float32)
-                    # Apply the mask using bitwise_and
-                    # frame_sub = np.multiply(frame_sub, mask)
-                # frame_sub[frame_sub > 127] = 0
+            if depth_mode == 1 and frame_count != start_frame:
+                frame_sub = frame.astype(np.float32) - frame_record[frame_count - frame_distance].astype(np.float32)
                 output_frames.append(frame_sub)
             else:
                 output_frames.append(frame)
 
         # Increment frame count
         frame_count += 1
-
-        if frame_count > start_frame + 10 * frame_distance:
-            break
+        if depth_mode == 1:
+            if frame_count >= end_frame:
+                break
+        else:
+            if frame_count >= end_frame - frame_distance:
+                break
 
     # Release the video file
     cap.release()
