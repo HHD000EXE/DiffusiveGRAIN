@@ -239,8 +239,8 @@ for epoch in range(epochs):
         test_loss = 0  # To accumulate test losses for this epoch
         epoch_dir = os.path.join(output_dir, f"test_epoch_{epoch}")
         for num_batches_test, (condition_test, label_test) in enumerate(test_dataloader):
-            loss_test = get_loss(model, condition_test.to(device), t, label_test.to(device))
-            test_loss += loss_test.item() * (0.7+loss.item())
+            loss_test = get_loss(model, condition_test.to(device), T/2, label_test.to(device))
+            test_loss += loss_test.item()
             if epoch in show_epoch:
                 sample_plot_image(epoch, condition_test.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
         if epoch not in show_epoch or epoch == 0:
@@ -257,7 +257,7 @@ for epoch in range(epochs):
 plt.figure(figsize=(10, 5))
 plt.plot(range(len(trainlosses)), trainlosses, label="Training Loss")
 plt.plot(range(len(testlosses)), testlosses, label="Test Loss")
-plt.ylim(0, 5)
+plt.ylim(0, 1)
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
 plt.title("Training Loss vs Epoch")
