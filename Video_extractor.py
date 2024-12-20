@@ -9,7 +9,7 @@ exca_seq_num = []  # sequence number of excavation actions
 image_name = []  # extracted image names
 
 
-depth_mode = 2  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
+depth_mode = 1  # 0 for RGB frame, 1 for \Delta depth frame, 2 for raw depth frame
 
 if depth_mode == 1 or depth_mode == 2:
     # Open the video file

@@ -257,6 +257,7 @@ for epoch in range(epochs):
 plt.figure(figsize=(10, 5))
 plt.plot(range(len(trainlosses)), trainlosses, label="Training Loss")
 plt.plot(range(len(testlosses)), testlosses, label="Test Loss")
+plt.ylim(0, 5)
 plt.xlabel("Iterations")
 plt.ylabel("Loss")
 plt.title("Training Loss vs Epoch")
