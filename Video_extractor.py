@@ -97,7 +97,7 @@ for file_name in file_names:
             if depth_mode == 1 and frame_count != start_frame:
                 frame_sub = frame.astype(np.float32) - frame_record[frame_count - frame_distance].astype(np.float32)
                 output_frames.append(frame_sub)
-            else:
+            if depth_mode == 2:
                 output_frames.append(frame)
 
         # Increment frame count
