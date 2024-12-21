@@ -201,7 +201,7 @@ data_transforms = transforms.Compose([
 
 torch.manual_seed(0)
 data = TrainDataset('train_images(RawD)', 'train_images(D)', data_transforms)
-train_size = int(0.99 * len(data))  # 80% for training
+train_size = int(0.90 * len(data))  # 80% for training
 test_size = len(data) - train_size  # 20% for testing
 train_dataset, test_dataset = random_split(data, [train_size, test_size])
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -211,7 +211,7 @@ model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 20
+epochs = 300
 show_epoch = list(range(0, epochs, 10)) + [epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
