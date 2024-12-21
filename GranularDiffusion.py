@@ -211,7 +211,7 @@ model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 300
+epochs = 20
 show_epoch = list(range(0, epochs, 10)) + [epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
@@ -239,7 +239,7 @@ for epoch in range(epochs):
         test_loss = 0  # To accumulate test losses for this epoch
         epoch_dir = os.path.join(output_dir, f"test_epoch_{epoch}")
         for num_batches_test, (condition_test, label_test) in enumerate(test_dataloader):
-            loss_test = get_loss(model, condition_test.to(device), T/2, label_test.to(device))
+            loss_test = get_loss(model, condition_test.to(device), torch.full((BATCH_SIZE,), T // 2, device=device, dtype=torch.long), label_test.to(device))
             test_loss += loss_test.item()
             if epoch in show_epoch:
                 sample_plot_image(epoch, condition_test.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
