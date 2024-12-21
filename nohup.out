@@ -4018,3 +4018,8 @@ Traceback (most recent call last):
     batch_size = t.shape[0]
                  ^^^^^^^
 AttributeError: 'float' object has no attribute 'shape'
+Traceback (most recent call last):
+  File "/home/haodi/RSS2025/GranularDiffusion.py", line 232, in <module>
+    epoch_loss += loss.item()
+                  ^^^^^^^^^^^
+KeyboardInterrupt
