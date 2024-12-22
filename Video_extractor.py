@@ -4,6 +4,17 @@ import pandas as pd
 from matplotlib import cm
 import numpy as np
 
+# Amplify pixels less than 0.2 by 5 times
+def amplify_mask(image, threshold=0.2, factor=5):
+    # Create a mask for absolute values less than the threshold
+    mask = np.abs(image) < threshold
+    # Amplify the masked values
+    amplified_image = np.copy(image)
+    amplified_image[mask] *= factor
+    # Clip to ensure values remain in the range [-1, 1]
+    amplified_image = np.clip(amplified_image, -1, 1)
+    return amplified_image
+
 frame_time = []  # frame number that indicate relative time from motor starting
 exca_seq_num = []  # sequence number of excavation actions
 image_name = []  # extracted image names
@@ -112,16 +123,19 @@ for file_name in file_names:
     # Release the video file
     cap.release()
 
+
+
     # Save the extracted frames to files
     for i, frame in enumerate(output_frames[:]):
         normalized_diff = frame / 255
+        normalized_diff = amplify_mask(normalized_diff)
         # Apply the coolwarm colormap
         colormap = cm.get_cmap('coolwarm')
         frame_colormap = (colormap((normalized_diff + 1) / 2)[:, :, :3] * 255).astype(np.uint8)
         if depth_mode == 0:
             cv2.imwrite(f"train_images(RGB)/{file_name[:-4]}_{i}.png", frame)
         if depth_mode == 1:
-            cv2.imwrite(f"train_images(D)/{file_name[:-4]}_{i}.png", frame_colormap * 2)
+            cv2.imwrite(f"train_images(D)/{file_name[:-4]}_{i}.png", frame_colormap)
         if depth_mode == 2:
             cv2.imwrite(f"train_images(RawD)/{file_name[:-4]}_{i}.png", frame)
         image_name.append(f"{file_name[:-4]}_{i}.png")
