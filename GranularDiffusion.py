@@ -201,7 +201,7 @@ data_transforms = transforms.Compose([
 
 torch.manual_seed(0)
 data = TrainDataset('train_images(RawD)', 'train_images(D)', data_transforms)
-train_size = int(0.90 * len(data))  # 80% for training
+train_size = int(0.98 * len(data))  # 80% for training
 test_size = len(data) - train_size  # 20% for testing
 train_dataset, test_dataset = random_split(data, [train_size, test_size])
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
@@ -211,8 +211,8 @@ model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 300
-show_epoch = list(range(0, epochs, 10)) + [epochs - 1]
+epochs = 30
+show_epoch = list(range(0, epochs, 5)) + [epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 
@@ -241,9 +241,9 @@ for epoch in range(epochs):
         for num_batches_test, (condition_test, label_test) in enumerate(test_dataloader):
             loss_test = get_loss(model, condition_test.to(device), torch.full((BATCH_SIZE,), T // 2, device=device, dtype=torch.long), label_test.to(device))
             test_loss += loss_test.item()
-            if epoch in show_epoch:
+            if epoch in show_epoch and num_batches_test % 1 == 0:
                 sample_plot_image(epoch, condition_test.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
-        if epoch not in show_epoch or epoch == 0:
+        if epoch not in show_epoch:
             avg_test_loss = test_loss / (num_batches_test + 1)
         testlosses.append(avg_test_loss)
         print(f"Test Loss at epoch {epoch}: {avg_test_loss}")
