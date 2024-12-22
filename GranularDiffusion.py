@@ -167,6 +167,7 @@ def sample_plot_image(epoch, condition, label, num, epoch_dir):
         if i % stepsize == 0:
             plt.subplot(1, num_images + 2, int((T - i) / stepsize))
             show_tensor_image(img.detach().cpu())
+            img.to(device)
             if i != 0:
                 plt.title("Denoising")  # Add title for the condition image
             else:
@@ -243,8 +244,8 @@ for epoch in range(epochs):
             test_loss += loss_test.item()
             if epoch in show_epoch and num_batches_test % 1 == 0:
                 sample_plot_image(epoch, condition_test.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
-        if epoch not in show_epoch:
-            avg_test_loss = test_loss / (num_batches_test + 1)
+        # if epoch not in show_epoch:
+        avg_test_loss = test_loss / (num_batches_test + 1)
         testlosses.append(avg_test_loss)
         print(f"Test Loss at epoch {epoch}: {avg_test_loss}")
 
