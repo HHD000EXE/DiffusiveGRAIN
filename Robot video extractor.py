@@ -5,7 +5,7 @@ from matplotlib import cm
 import numpy as np
 
 # Amplify pixels less than 0.2 by 5 times
-def amplify_mask(image, threshold=0.33, factor=3):
+def amplify_mask(image, threshold=0.5, factor=2):
     # Create a mask for absolute values less than the threshold
     mask = np.abs(image) < threshold
     # Amplify the masked values
@@ -122,8 +122,8 @@ for file_name in file_names:
     # Save the extracted frames to files
     for i, frame in enumerate(output_frames[:]):
         normalized_diff = frame / 255
-        # if depth_mode == 1:
-        #     normalized_diff = amplify_mask(normalized_diff)
+        if depth_mode == 1:
+            normalized_diff = amplify_mask(normalized_diff)
         # Apply the coolwarm colormap
         colormap = cm.get_cmap('coolwarm')
         frame_colormap = (colormap((normalized_diff + 1) / 2)[:, :, :3] * 255).astype(np.uint8)
