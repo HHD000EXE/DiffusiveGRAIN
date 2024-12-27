@@ -24,7 +24,7 @@ class TrainDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.image_folder, self.image_files[idx])
         label_name = os.path.join(self.label_folder, self.label_files[idx])
-        image = Image.open(img_name)#.convert("RGB")
+        image = Image.open(img_name).convert("RGB")
         label = Image.open(label_name).convert("RGB")
         image = self.transform(image)
         label = self.transform(label)
@@ -82,7 +82,7 @@ class Block(nn.Module):
 class UNet(nn.Module):
     def __init__(self):
         super().__init__()
-        image_channels = 4
+        image_channels = 3 * 2
         down_channels = (64, 128, 256, 512, 1024)
         up_channels = (1024, 512, 256, 128, 64)
         out_dim = 3
@@ -212,8 +212,8 @@ model = UNet()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 100
-show_epoch = list(range(0, epochs, 5)) + [epochs - 1]
+epochs = 150
+show_epoch = list(range(0, epochs, 10)) + [epochs - 1]
 output_dir = "output"
 os.makedirs(output_dir, exist_ok=True)
 
