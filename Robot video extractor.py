@@ -5,7 +5,7 @@ from matplotlib import cm
 import numpy as np
 
 # Amplify pixels less than 0.2 by 5 times
-def amplify_mask(image, threshold=0.5, factor=2):
+def amplify_mask(image, threshold=0.8, factor=1.7):
     # Create a mask for absolute values less than the threshold
     mask = np.abs(image) < threshold
     # Amplify the masked values
@@ -13,7 +13,11 @@ def amplify_mask(image, threshold=0.5, factor=2):
     amplified_image[mask] *= factor
     # Clip to ensure values remain in the range [-1, 1]
     amplified_image = np.clip(amplified_image, -1, 1)
-    return amplified_image
+    #####################################
+    mask2 = np.abs(amplified_image) < 0.40
+    amplified_image2 = np.copy(amplified_image)
+    amplified_image2[mask2] *= 0.1
+    return amplified_image2
 
 frame_time = []  # frame number that indicate relative time from motor starting
 exca_seq_num = []  # sequence number of excavation actions
@@ -85,8 +89,8 @@ for file_name in file_names:
 
         # Define the coordinates for the top-left and bottom-right corners of the ROI
         if depth_mode == 1 or depth_mode == 2:
-            x1, y1 = 175, 100  # Bottom-left corner
-            x2, y2 = 525, 430  # Top-right corner
+            x1, y1 = 190, 130  # Bottom-left corner
+            x2, y2 = 490, 430  # Top-right corner
         else:
             x1, y1 = 110, 50  # Bottom-left corner
             x2, y2 = 510, 450  # Top-right corner
