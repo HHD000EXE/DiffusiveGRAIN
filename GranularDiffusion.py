@@ -172,7 +172,6 @@ def prediction(epoch, condition, action, label, num, epoch_dir):
         if i % stepsize == 0:
             plt.subplot(1, num_images + 2, int((T - i) / stepsize))
             show_tensor_image(img.detach().cpu())
-            img.to(device)
             if i != 0:
                 plt.title("Denoising")  # Add title for the condition image
             else:
@@ -183,6 +182,10 @@ def prediction(epoch, condition, action, label, num, epoch_dir):
     plt.subplot(1, num_images + 2, num_images + 2)
     show_tensor_image(label.detach().cpu())
     plt.title("Label Image")  # Add title for the batch image
+
+    diff = (img.detach().cpu() - label.detach().cpu()) ** 2
+    print("MSE:", np.mean(diff.numpy()))
+
     plt.savefig(os.path.join(epoch_dir, f"sample_plot_epoch_{epoch}_{num}.png"))
     plt.close()
 
@@ -206,7 +209,7 @@ data_transforms = transforms.Compose([
 ])
 
 torch.manual_seed(0)
-data = TrainDataset('Bigdiffusion(RawD)', 'Bigdiffusion(D)', 'action_images', data_transforms)
+data = TrainDataset('train_images(RawD)', 'train_images(D)', 'action_images', data_transforms)
 train_size = int(0.98 * len(data))  # 90% for training
 test_size = len(data) - train_size  # 10% for testing
 train_dataset, test_dataset = random_split(data, [train_size, test_size])
@@ -233,7 +236,7 @@ for epoch in range(epochs):
         loss = get_loss(model, condition.to(device), action.to(device), t, label.to(device))
         loss.backward()
         optimizer.step()
-        if epoch in show_epoch and num_batches_train % 100 == 0:
+        if epoch in show_epoch and num_batches_train % 1000 == 0:
             prediction(epoch, condition.to(device), action.to(device), label.to(device), num_batches_train, epoch_dir)  # Save training images
         epoch_loss += loss.item()
     average_loss = epoch_loss / (num_batches_train + 1)
@@ -247,7 +250,7 @@ for epoch in range(epochs):
         for num_batches_test, (condition_test, action_test, label_test) in enumerate(test_dataloader):
             loss_test = get_loss(model, condition_test.to(device), action_test.to(device), torch.full((BATCH_SIZE,), T // 2, device=device, dtype=torch.long), label_test.to(device))
             test_loss += loss_test.item()
-            if epoch in show_epoch and num_batches_test % 2 == 0:
+            if epoch in show_epoch and num_batches_test % 20 == 0:
                 prediction(epoch, condition_test.to(device), action.to(device), label_test.to(device), num_batches_test, epoch_dir)  # Save evaluation images
         # if epoch not in show_epoch:
         avg_test_loss = test_loss / (num_batches_test + 1)

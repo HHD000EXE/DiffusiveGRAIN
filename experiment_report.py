@@ -1,116 +1,116 @@
-# import numpy as np
-# import matplotlib.pyplot as plt
-#
-# # --------------------
-# # Example data
-# # --------------------
-# plt.rcParams.update({'font.size': 40})
-# tasks = ["Manipulation", "Locomotion", "Loco-manip", "Multi-robot"]
-#
-# # Success rates (fractions, e.g., 0.90 = 90%)
-# success_rates_current = [0.80, 0.90, 0.70, 0.70]
-# success_rates_baseline = [0.60, 0.80, 0.20, 0.40]
-#
-# # Performance error (cm) for successful trials
-# perf_err_current_mean = [6.4, 4.3, 8.6, 7.9]
-# perf_err_current_std  = [1.2, 0.0, 2.3, 1.8]
-#
-# perf_err_baseline_mean = [8.9, 6.2, 14.2, 11.9]
-# perf_err_baseline_std  = [2.6, 1.5, 4.5, 3.8]
-#
-# # Convert success rates to percentages for plotting
-# success_rates_current_percent = [sr * 100 for sr in success_rates_current]
-# success_rates_baseline_percent = [sr * 100 for sr in success_rates_baseline]
-#
-# # X positions for each task
-# x = np.arange(len(tasks))  # [0,1,2,3]
-# bar_width = 0.35
-#
-# # --------------------
-# # Plotting
-# # --------------------
-# fig, ax1 = plt.subplots(figsize=(8, 5))
-#
-# # --- Left Y-Axis: Success Rate ---
-# # Current Method bars
-# rects_current = ax1.bar(
-#     x - bar_width/2,
-#     success_rates_current_percent,
-#     bar_width,
-#     color='pink',
-#     alpha=0.7,
-#     label='Success Rate (Current)'
-# )
-#
-# # Baseline bars
-# rects_baseline = ax1.bar(
-#     x + bar_width/2,
-#     success_rates_baseline_percent,
-#     bar_width,
-#     color='skyblue',
-#     alpha=0.7,
-#     label='Success Rate (Baseline)'
-# )
-#
-# ax1.set_ylabel('Success Rate (%)')
-# ax1.set_ylim([0, 100])  # 0–100% for percentages
-# ax1.set_xticks(x)
-# ax1.set_xticklabels(tasks)
-#
-# # --- Right Y-Axis: Performance Error in cm ---
-# ax2 = ax1.twinx()
-#
-# # Current Method error bars (no connecting line)
-# ax2.errorbar(
-#     x - bar_width/2,
-#     perf_err_current_mean,
-#     yerr=perf_err_current_std,
-#     fmt='o',           # plot markers only
-#     linestyle='',      # no line connecting markers
-#     color='red',
-#     capsize=5,
-#     elinewidth=5,      # thicker vertical error lines
-#     capthick=5,        # thicker cap lines
-#     markersize=20,       # larger markers
-#     markeredgewidth=2,   # thicker marker edge
-#     label='Error of failed trials (Current)'
-# )
-#
-# # Baseline error bars (no connecting line)
-# ax2.errorbar(
-#     x + bar_width/2,
-#     perf_err_baseline_mean,
-#     yerr=perf_err_baseline_std,
-#     fmt='o',
-#     linestyle='',
-#     color='blue',
-#     capsize=5,
-#     elinewidth=5,      # thicker vertical error lines
-#     capthick=5,        # thicker cap lines
-#     markersize=20,       # larger markers
-#     markeredgewidth=2,   # thicker marker edge
-#     label='Error of failed trials (Baseline)',
-# )
-#
-# ax2.set_ylabel('Performance Error (cm)')
-# # Optionally set limits if desired
-# ax2.set_ylim([0, max(
-#     max(np.array(perf_err_current_mean) + np.array(perf_err_current_std)),
-#     max(np.array(perf_err_baseline_mean) + np.array(perf_err_baseline_std))
-# ) + 8.0])
-#
-# # --- Title and Legend ---
-# # plt.title('Success Rate and Performance Error by Task', fontsize=18)
-#
-# # Combine legends from both axes
-# lines1, labels1 = ax1.get_legend_handles_labels()
-# lines2, labels2 = ax2.get_legend_handles_labels()
-# ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=28)
-#
-#
-#
-# plt.tight_layout()
-# plt.show()
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --------------------
+# Example data
+# --------------------
+plt.rcParams.update({'font.size': 40})
+tasks = ["Manipulation", "Locomotion", "Loco-manip", "Multi-robot"]
+
+# Success rates (fractions, e.g., 0.90 = 90%)
+success_rates_current = [0.80, 0.90, 0.70, 0.70]
+success_rates_baseline = [0.60, 0.80, 0.20, 0.40]
+
+# Performance error (cm) for successful trials
+perf_err_current_mean = [12.8, 8.6, 17.2, 15.8]
+perf_err_current_std  = [2.4, 0.0, 4.6, 3.6]
+
+perf_err_baseline_mean = [17.8, 12.4, 28.4, 23.8]
+perf_err_baseline_std  = [5.2, 3.0, 9.0, 7.6]
+
+# Convert success rates to percentages for plotting
+success_rates_current_percent = [sr * 100 for sr in success_rates_current]
+success_rates_baseline_percent = [sr * 100 for sr in success_rates_baseline]
+
+# X positions for each task
+x = np.arange(len(tasks))  # [0,1,2,3]
+bar_width = 0.35
+
+# --------------------
+# Plotting
+# --------------------
+fig, ax1 = plt.subplots(figsize=(8, 5))
+
+# --- Left Y-Axis: Success Rate ---
+# Current Method bars
+rects_current = ax1.bar(
+    x - bar_width/2,
+    success_rates_current_percent,
+    bar_width,
+    color='pink',
+    alpha=0.7,
+    label='Success Rate (DiffusiveGRAIN)'
+)
+
+# Baseline bars
+rects_baseline = ax1.bar(
+    x + bar_width/2,
+    success_rates_baseline_percent,
+    bar_width,
+    color='skyblue',
+    alpha=0.7,
+    label='Success Rate (GRAIN)'
+)
+
+ax1.set_ylabel('Success Rate (%)')
+ax1.set_ylim([0, 100])  # 0–100% for percentages
+ax1.set_xticks(x)
+ax1.set_xticklabels(tasks)
+
+# --- Right Y-Axis: Performance Error in cm ---
+ax2 = ax1.twinx()
+
+# Current Method error bars (no connecting line)
+ax2.errorbar(
+    x - bar_width/2,
+    perf_err_current_mean,
+    yerr=perf_err_current_std,
+    fmt='o',           # plot markers only
+    linestyle='',      # no line connecting markers
+    color='red',
+    capsize=5,
+    elinewidth=5,      # thicker vertical error lines
+    capthick=5,        # thicker cap lines
+    markersize=20,       # larger markers
+    markeredgewidth=2,   # thicker marker edge
+    label='Error (DiffusiveGRAIN)'
+)
+
+# Baseline error bars (no connecting line)
+ax2.errorbar(
+    x + bar_width/2,
+    perf_err_baseline_mean,
+    yerr=perf_err_baseline_std,
+    fmt='o',
+    linestyle='',
+    color='blue',
+    capsize=5,
+    elinewidth=5,      # thicker vertical error lines
+    capthick=5,        # thicker cap lines
+    markersize=20,       # larger markers
+    markeredgewidth=2,   # thicker marker edge
+    label='Error (GRAIN)',
+)
+
+ax2.set_ylabel('Performance Error (cm)')
+# Optionally set limits if desired
+ax2.set_ylim([0, max(
+    max(np.array(perf_err_current_mean) + np.array(perf_err_current_std)),
+    max(np.array(perf_err_baseline_mean) + np.array(perf_err_baseline_std))
+) + 16.0])
+
+# --- Title and Legend ---
+# plt.title('Success Rate and Performance Error by Task', fontsize=18)
+
+# Combine legends from both axes
+lines1, labels1 = ax1.get_legend_handles_labels()
+lines2, labels2 = ax2.get_legend_handles_labels()
+ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=28)
+
+
+
+plt.tight_layout()
+plt.show()
 
 
 ##################################################################################
@@ -177,49 +177,49 @@
 # plt.show()
 
 ###
-import numpy as np
-import matplotlib.pyplot as plt
+# import numpy as np
+# import matplotlib.pyplot as plt
 
-# Data
-means = [3.35, 3.13, 3.03, 2.97, 2.96]
-stds = [0.74, 0.64, 0.46, 0.51, 0.44]
-x_labels = [0, 2, 4, 6, 8]
-
-# Create a list/array of x positions for the bars
-x_positions = np.arange(len(means))
-
-# Create the figure and axis
-fig, ax = plt.subplots(figsize=(6, 4))
-
-# Plot the bars with error bars
-ax.bar(
-    x_positions,        # x-coordinates of the bars
-    means,              # heights of the bars
-    yerr=stds,          # error bar lengths
-    capsize=5,          # length of the error bar caps
-    color='skyblue',    # color of bars
-    edgecolor='k',      # bar border color
-    alpha=0.8
-)
-
-# Set x-axis tick positions and labels
-ax.set_xticks(x_positions)
-ax.set_xticklabels(x_labels)
-
-# Set y-axis range
-ax.set_ylim([0, 7])
-
-# Add labels and title
-ax.set_xlabel('X-axis')
-ax.set_ylabel('Mean Value')
-ax.set_title('Histogram with Error Bars')
-
-# Optional: add grid
-ax.grid(True, axis='y', linestyle='--', alpha=0.7)
-
-# Show the plot
-plt.tight_layout()
-plt.show()
+# # Data
+# means = [3.35, 3.13, 3.03, 2.97, 2.96]
+# stds = [0.74, 0.64, 0.46, 0.51, 0.44]
+# x_labels = [0, 2, 4, 6, 8]
+#
+# # Create a list/array of x positions for the bars
+# x_positions = np.arange(len(means))
+#
+# # Create the figure and axis
+# fig, ax = plt.subplots(figsize=(6, 4))
+#
+# # Plot the bars with error bars
+# ax.bar(
+#     x_positions,        # x-coordinates of the bars
+#     means,              # heights of the bars
+#     yerr=stds,          # error bar lengths
+#     capsize=5,          # length of the error bar caps
+#     color='skyblue',    # color of bars
+#     edgecolor='k',      # bar border color
+#     alpha=0.8
+# )
+#
+# # Set x-axis tick positions and labels
+# ax.set_xticks(x_positions)
+# ax.set_xticklabels(x_labels)
+#
+# # Set y-axis range
+# ax.set_ylim([0, 7])
+#
+# # Add labels and title
+# ax.set_xlabel('X-axis')
+# ax.set_ylabel('Mean Value')
+# ax.set_title('Histogram with Error Bars')
+#
+# # Optional: add grid
+# ax.grid(True, axis='y', linestyle='--', alpha=0.7)
+#
+# # Show the plot
+# plt.tight_layout()
+# plt.show()
 
 ###
 #######################################################################
@@ -229,7 +229,7 @@ plt.show()
 # plt.rcParams.update({'font.size': 36})
 # # --- Data --------------------------------------------------------------------
 #
-# labels = ["MF", "LT", "RT", "FE", "LFE", "RFE"]
+# labels = ["AF", "RP", "LP", "FP", "LFE", "RFE"]
 #
 # # 1) Fore-aft displacement (cm)
 # mean_fore_aft = np.array([2.61, 0.62, 0.59, 0.26, 0.16, 0.15])
@@ -260,7 +260,7 @@ plt.show()
 #             edgecolor="black")
 # axes[0].set_xticks(x)
 # axes[0].set_xticklabels(labels)
-# axes[0].set_ylabel("fore-aft displacement (cm)")
+# axes[0].set_ylabel("Fore-aft displacement (cm)")
 # # axes[0].set_title("Fore-Aft")
 #
 # # --- Subplot 2: Horizontal displacement ---
@@ -272,7 +272,7 @@ plt.show()
 #             edgecolor="black")
 # axes[1].set_xticks(x)
 # axes[1].set_xticklabels(labels)
-# axes[1].set_ylabel("horizontal displacement (cm)")
+# axes[1].set_ylabel("Horizontal displacement (cm)")
 # # axes[1].set_title("Horizontal")
 #
 # # --- Subplot 3: Orientation changes ---
@@ -284,13 +284,12 @@ plt.show()
 #             edgecolor="black")
 # axes[2].set_xticks(x)
 # axes[2].set_xticklabels(labels)
-# axes[2].set_ylabel("orientation changes (rads)")
+# axes[2].set_ylabel("Orientation changes (rads)")
 # # axes[2].set_title("Orientation")
 #
 # # Adjust layout so labels don’t overlap
 # plt.tight_layout()
 # plt.show()
-
 
 #######################################################################
 
@@ -373,8 +372,8 @@ plt.show()
 #     label='y = 6.34'
 # )
 #
-# axes[0].set_ylim([0, 8])
-# axes[1].set_ylim([0, 8])
+# axes[0].set_ylim([0, 9])
+# axes[1].set_ylim([0, 9])
 #
 #
 #
