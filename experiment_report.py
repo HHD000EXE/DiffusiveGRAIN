@@ -1,180 +1,180 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-# --------------------
-# Example data
-# --------------------
-plt.rcParams.update({'font.size': 40})
-tasks = ["Manipulation", "Locomotion", "Loco-manip", "Multi-robot"]
-
-# Success rates (fractions, e.g., 0.90 = 90%)
-success_rates_current = [0.80, 0.90, 0.70, 0.70]
-success_rates_baseline = [0.60, 0.80, 0.20, 0.40]
-
-# Performance error (cm) for successful trials
-perf_err_current_mean = [12.8, 8.6, 17.2, 15.8]
-perf_err_current_std  = [2.4, 0.0, 4.6, 3.6]
-
-perf_err_baseline_mean = [17.8, 12.4, 28.4, 23.8]
-perf_err_baseline_std  = [5.2, 3.0, 9.0, 7.6]
-
-# Convert success rates to percentages for plotting
-success_rates_current_percent = [sr * 100 for sr in success_rates_current]
-success_rates_baseline_percent = [sr * 100 for sr in success_rates_baseline]
-
-# X positions for each task
-x = np.arange(len(tasks))  # [0,1,2,3]
-bar_width = 0.35
-
-# --------------------
-# Plotting
-# --------------------
-fig, ax1 = plt.subplots(figsize=(8, 5))
-
-# --- Left Y-Axis: Success Rate ---
-# Current Method bars
-rects_current = ax1.bar(
-    x - bar_width/2,
-    success_rates_current_percent,
-    bar_width,
-    color='pink',
-    alpha=0.7,
-    label='Success Rate (DiffusiveGRAIN)'
-)
-
-# Baseline bars
-rects_baseline = ax1.bar(
-    x + bar_width/2,
-    success_rates_baseline_percent,
-    bar_width,
-    color='skyblue',
-    alpha=0.7,
-    label='Success Rate (GRAIN)'
-)
-
-ax1.set_ylabel('Success Rate (%)')
-ax1.set_ylim([0, 100])  # 0–100% for percentages
-ax1.set_xticks(x)
-ax1.set_xticklabels(tasks)
-
-# --- Right Y-Axis: Performance Error in cm ---
-ax2 = ax1.twinx()
-
-# Current Method error bars (no connecting line)
-ax2.errorbar(
-    x - bar_width/2,
-    perf_err_current_mean,
-    yerr=perf_err_current_std,
-    fmt='o',           # plot markers only
-    linestyle='',      # no line connecting markers
-    color='red',
-    capsize=5,
-    elinewidth=5,      # thicker vertical error lines
-    capthick=5,        # thicker cap lines
-    markersize=20,       # larger markers
-    markeredgewidth=2,   # thicker marker edge
-    label='Error (DiffusiveGRAIN)'
-)
-
-# Baseline error bars (no connecting line)
-ax2.errorbar(
-    x + bar_width/2,
-    perf_err_baseline_mean,
-    yerr=perf_err_baseline_std,
-    fmt='o',
-    linestyle='',
-    color='blue',
-    capsize=5,
-    elinewidth=5,      # thicker vertical error lines
-    capthick=5,        # thicker cap lines
-    markersize=20,       # larger markers
-    markeredgewidth=2,   # thicker marker edge
-    label='Error (GRAIN)',
-)
-
-ax2.set_ylabel('Performance Error (cm)')
-# Optionally set limits if desired
-ax2.set_ylim([0, max(
-    max(np.array(perf_err_current_mean) + np.array(perf_err_current_std)),
-    max(np.array(perf_err_baseline_mean) + np.array(perf_err_baseline_std))
-) + 16.0])
-
-# --- Title and Legend ---
-# plt.title('Success Rate and Performance Error by Task', fontsize=18)
-
-# Combine legends from both axes
-lines1, labels1 = ax1.get_legend_handles_labels()
-lines2, labels2 = ax2.get_legend_handles_labels()
-ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=28)
-
-
-
-plt.tight_layout()
-plt.show()
+# import numpy as np
+# import matplotlib.pyplot as plt
+#
+# # --------------------
+# # Example data
+# # --------------------
+# plt.rcParams.update({'font.size': 40})
+# tasks = ["Manipulation", "Locomotion", "Loco-manip", "Multi-robot"]
+#
+# # Success rates (fractions, e.g., 0.90 = 90%)
+# success_rates_current = [0.80, 0.90, 0.70, 0.70]
+# success_rates_baseline = [0.60, 0.80, 0.20, 0.40]
+#
+# # Performance error (cm) for successful trials
+# perf_err_current_mean = [12.8, 8.6, 17.2, 15.8]
+# perf_err_current_std  = [2.4, 0.0, 4.6, 3.6]
+#
+# perf_err_baseline_mean = [17.8, 12.4, 28.4, 23.8]
+# perf_err_baseline_std  = [5.2, 3.0, 9.0, 7.6]
+#
+# # Convert success rates to percentages for plotting
+# success_rates_current_percent = [sr * 100 for sr in success_rates_current]
+# success_rates_baseline_percent = [sr * 100 for sr in success_rates_baseline]
+#
+# # X positions for each task
+# x = np.arange(len(tasks))  # [0,1,2,3]
+# bar_width = 0.35
+#
+# # --------------------
+# # Plotting
+# # --------------------
+# fig, ax1 = plt.subplots(figsize=(8, 5))
+#
+# # --- Left Y-Axis: Success Rate ---
+# # Current Method bars
+# rects_current = ax1.bar(
+#     x - bar_width/2,
+#     success_rates_current_percent,
+#     bar_width,
+#     color='pink',
+#     alpha=0.7,
+#     label='Success Rate (DiffusiveGRAIN)'
+# )
+#
+# # Baseline bars
+# rects_baseline = ax1.bar(
+#     x + bar_width/2,
+#     success_rates_baseline_percent,
+#     bar_width,
+#     color='skyblue',
+#     alpha=0.7,
+#     label='Success Rate (GRAIN)'
+# )
+#
+# ax1.set_ylabel('Success Rate (%)')
+# ax1.set_ylim([0, 100])  # 0–100% for percentages
+# ax1.set_xticks(x)
+# ax1.set_xticklabels(tasks)
+#
+# # --- Right Y-Axis: Performance Error in cm ---
+# ax2 = ax1.twinx()
+#
+# # Current Method error bars (no connecting line)
+# ax2.errorbar(
+#     x - bar_width/2,
+#     perf_err_current_mean,
+#     yerr=perf_err_current_std,
+#     fmt='o',           # plot markers only
+#     linestyle='',      # no line connecting markers
+#     color='red',
+#     capsize=5,
+#     elinewidth=5,      # thicker vertical error lines
+#     capthick=5,        # thicker cap lines
+#     markersize=20,       # larger markers
+#     markeredgewidth=2,   # thicker marker edge
+#     label='Error (DiffusiveGRAIN)'
+# )
+#
+# # Baseline error bars (no connecting line)
+# ax2.errorbar(
+#     x + bar_width/2,
+#     perf_err_baseline_mean,
+#     yerr=perf_err_baseline_std,
+#     fmt='o',
+#     linestyle='',
+#     color='blue',
+#     capsize=5,
+#     elinewidth=5,      # thicker vertical error lines
+#     capthick=5,        # thicker cap lines
+#     markersize=20,       # larger markers
+#     markeredgewidth=2,   # thicker marker edge
+#     label='Error (GRAIN)',
+# )
+#
+# ax2.set_ylabel('Performance Error (cm)')
+# # Optionally set limits if desired
+# ax2.set_ylim([0, max(
+#     max(np.array(perf_err_current_mean) + np.array(perf_err_current_std)),
+#     max(np.array(perf_err_baseline_mean) + np.array(perf_err_baseline_std))
+# ) + 16.0])
+#
+# # --- Title and Legend ---
+# # plt.title('Success Rate and Performance Error by Task', fontsize=18)
+#
+# # Combine legends from both axes
+# lines1, labels1 = ax1.get_legend_handles_labels()
+# lines2, labels2 = ax2.get_legend_handles_labels()
+# ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=28)
+#
+#
+#
+# plt.tight_layout()
+# plt.show()
 
 
 ##################################################################################
 
-# import numpy as np
-# import matplotlib.pyplot as plt
-#
-# plt.rcParams.update({'font.size': 30})
-#
-# # Data: means and standard deviations
-# grain_mean = [4.36, 3.68, 1.85, 1.91, 1.66]
-# grain_std  = [2.32, 1.67, 0.76, 0.88, 0.72]
-#
-# current_mean = [2.21, 1.55, 1.62, 1.33, 1.24]
-# current_std  = [0.91, 0.77, 0.79, 0.55, 0.42]
-#
-# # Depth values
-# depths = [0, 2, 4, 6, 8]
-#
-# # Create an array of indices for the x-axis positions
-# x = np.arange(len(depths))  # [0, 1, 2, 3, 4]
-#
-# # Width of each bar
-# width = 0.35
-#
-# # Create the figure and axes
-# fig, ax = plt.subplots(figsize=(8, 6))
-#
-# # Plot bars for GRAIN
-# bars_grain = ax.bar(
-#     x - width/2,       # Shift left by width/2 so that we can place Current bars next to it
-#     grain_mean,        # Mean values
-#     width,             # Bar width
-#     yerr=grain_std,    # Error bars
-#     capsize=5,         # Add caps to error bars
-#     color='skyblue',
-#     label='GRAIN'      # Legend label
-# )
-#
-# # Plot bars for Current
-# bars_current = ax.bar(
-#     x + width/2,       # Shift right by width/2
-#     current_mean,       # Mean values
-#     width,             # Bar width
-#     yerr=current_std,  # Error bars
-#     capsize=5,         # Add caps to error bars
-#     color='pink',
-#     label='DiffusiveGRAIN'    # Legend label
-# )
-#
-# # Set x-axis ticks and labels
-# ax.set_xticks(x)
-# ax.set_xticklabels(depths)
-#
-# # Labels and title
-# ax.set_xlabel('Distance (cm)')
-# ax.set_ylabel('Prediction Error (cm)')
-#
-# # Add grid and legend
-# # ax.grid(True, linestyle='--', alpha=0.7)
-# ax.legend()
-#
-# plt.tight_layout()
-# plt.show()
+import numpy as np
+import matplotlib.pyplot as plt
+
+plt.rcParams.update({'font.size': 30})
+
+# Data: means and standard deviations
+grain_mean = [4.66, 3.98, 2.45, 1.91, 1.78]
+grain_std  = [2.32, 1.67, 0.84, 0.68, 0.54]
+
+current_mean = [2.71, 2.05, 2.12, 1.83, 1.74]
+current_std  = [0.91, 0.77, 0.79, 0.55, 0.42]
+
+# Depth values
+depths = [0, 2, 4, 6, 8]
+
+# Create an array of indices for the x-axis positions
+x = np.arange(len(depths))  # [0, 1, 2, 3, 4]
+
+# Width of each bar
+width = 0.35
+
+# Create the figure and axes
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# Plot bars for GRAIN
+bars_grain = ax.bar(
+    x - width/2,       # Shift left by width/2 so that we can place Current bars next to it
+    grain_mean,        # Mean values
+    width,             # Bar width
+    yerr=grain_std,    # Error bars
+    capsize=5,         # Add caps to error bars
+    color='skyblue',
+    label='GRAIN'      # Legend label
+)
+
+# Plot bars for Current
+bars_current = ax.bar(
+    x + width/2,       # Shift right by width/2
+    current_mean,       # Mean values
+    width,             # Bar width
+    yerr=current_std,  # Error bars
+    capsize=5,         # Add caps to error bars
+    color='pink',
+    label='DiffusiveGRAIN'    # Legend label
+)
+
+# Set x-axis ticks and labels
+ax.set_xticks(x)
+ax.set_xticklabels(depths)
+
+# Labels and title
+ax.set_xlabel('Distance (cm)')
+ax.set_ylabel('Prediction Error (cm)')
+
+# Add grid and legend
+# ax.grid(True, linestyle='--', alpha=0.7)
+ax.legend()
+
+plt.tight_layout()
+plt.show()
 
 ###
 # import numpy as np

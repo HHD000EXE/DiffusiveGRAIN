@@ -230,6 +230,7 @@ for epoch in range(epochs):
     model.train()
     epoch_loss = 0  # To accumulate train losses for this epoch
     epoch_dir = os.path.join(output_dir, f"epoch_{epoch}")
+
     for num_batches_train, (condition, action, label) in enumerate(train_dataloader):
         optimizer.zero_grad()
         t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
